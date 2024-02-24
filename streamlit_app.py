@@ -224,16 +224,17 @@ with col2:
 
 st.markdown("")
 st.title("Options Price - Interactive Heatmap")
+st.info("Explore how option prices fluctuate with varying 'Spot Prices and Volatility' levels using interactive heatmap parameters, all while maintaining a constant 'Strike Price'.")
 
 # Interactive Sliders and Heatmaps for Call and Put Options
 col1, col2 = st.columns([1,1], gap="small")
 
 with col1:
-    st.subheader("Call Price Heatmap (Strike Price Fixed)")
+    st.subheader("Call Price Heatmap")
     heatmap_fig_call, _ = plot_heatmap(bs_model, spot_range, vol_range, strike)
     st.pyplot(heatmap_fig_call)
 
 with col2:
-    st.subheader("Put Price Heatmap (Strike Price Fixed)")
+    st.subheader("Put Price Heatmap")
     _, heatmap_fig_put = plot_heatmap(bs_model, spot_range, vol_range, strike)
     st.pyplot(heatmap_fig_put)
