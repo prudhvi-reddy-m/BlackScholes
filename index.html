@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Option Pricing Calculator</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+</head>
+<body>
+<div class="container">
+    <h1 class="mt-5">Option Pricing Calculator</h1>
+    {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+    <form method="post">
+        <div class="form-group">
+            <label for="ticker">Stock Ticker Symbol (e.g., AAPL):</label>
+            <input type="text" class="form-control" id="ticker" name="ticker" required>
+        </div>
+        <div class="form-group">
+            <label for="strike">Strike Price (K):</label>
+            <input type="number" step="0.01" class="form-control" id="strike" name="strike" required>
+        </div>
+        <div class="form-group">
+            <label for="time">Time to Expiration (in days):</label>
+            <input type="number" class="form-control" id="time" name="time" required>
+        </div>
+        <div class="form-group">
+            <label for="rate">Risk-Free Interest Rate (e.g., 0.05 for 5%):</label>
+            <input type="number" step="0.0001" class="form-control" id="rate" name="rate" required>
+        </div>
+        <div class="form-group">
+            <label for="option_type">Option Type:</label>
+            <select class="form-control" id="option_type" name="option_type" required>
+                <option value="C">Call Option</option>
+                <option value="P">Put Option</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Calculate Option Price</button>
+    </form>
+</div>
+</body>
+</html>
