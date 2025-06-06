@@ -3,6 +3,13 @@ from scipy.stats import norm
 
 
 class BlackScholes:
+    """Minimal Black-Scholes engine with intrinsic-value fallback.
+
+    If *time_to_maturity* is 0 (or < 0) the class returns intrinsic
+    value (pay-off at expiry) and sets Greeks accordingly.  Otherwise it
+    returns discounted Black-Scholes prices and the usual Δ/Γ.
+    """
+
     def __init__(
         self,
         time_to_maturity: float,
@@ -10,64 +17,62 @@ class BlackScholes:
         current_price: float,
         volatility: float,
         interest_rate: float,
-    ):
-        self.time_to_maturity = time_to_maturity
+    ) -> None:
+        self.time_to_maturity = max(0.0, time_to_maturity)
         self.strike = strike
         self.current_price = current_price
         self.volatility = volatility
         self.interest_rate = interest_rate
 
-    def run(
-        self,
-    ):
-        time_to_maturity = self.time_to_maturity
-        strike = self.strike
-        current_price = self.current_price
-        volatility = self.volatility
-        interest_rate = self.interest_rate
+    # ------------------------------------------------------------------
+    # Public interface
+    # ------------------------------------------------------------------
+    def calculate_prices(self):
+        """Return (call_price, put_price) and populate Greek attributes."""
+        if self.time_to_maturity == 0:
+            return self._intrinsic_values()
+        else:
+            return self._bs_values()
+
+    # ------------------------------------------------------------------
+    # --- internal helpers ------------------------------------------------
+    # ------------------------------------------------------------------
+    def _intrinsic_values(self):
+        """Intrinsic (expiry) prices + simple Greeks."""
+        call_price = max(0.0, self.current_price - self.strike)
+        put_price = max(0.0, self.strike - self.current_price)
+
+        # Greeks at expiry: delta is ±1 if ITM, 0 if OTM; gamma/theta/vega->0
+        self.call_delta = 1.0 if call_price > 0.0 else 0.0
+        self.put_delta = -1.0 if put_price > 0.0 else 0.0
+        self.call_gamma = self.put_gamma = 0.0
+
+        self.call_price, self.put_price = call_price, put_price
+        return call_price, put_price
+
+    def _bs_values(self):
+        """Black-Scholes analytical prices and Δ/Γ."""
+        T = self.time_to_maturity
+        S = self.current_price
+        K = self.strike
+        r = self.interest_rate
+        sigma = self.volatility
 
         d1 = (
-            log(current_price / strike) +
-            (interest_rate + 0.5 * volatility ** 2) * time_to_maturity
-            ) / (
-                volatility * sqrt(time_to_maturity)
-            )
-        d2 = d1 - volatility * sqrt(time_to_maturity)
+            log(S / K)
+            + (r + 0.5 * sigma ** 2) * T
+        ) / (sigma * sqrt(T))
+        d2 = d1 - sigma * sqrt(T)
 
-        call_price = current_price * norm.cdf(d1) - (
-            strike * exp(-(interest_rate * time_to_maturity)) * norm.cdf(d2)
-        )
-        put_price = (
-            strike * exp(-(interest_rate * time_to_maturity)) * norm.cdf(-d2)
-        ) - current_price * norm.cdf(-d1)
+        call_price = S * norm.cdf(d1) - K * exp(-r * T) * norm.cdf(d2)
+        put_price = K * exp(-r * T) * norm.cdf(-d2) - S * norm.cdf(-d1)
 
-        self.call_price = call_price
-        self.put_price = put_price
-
-        # GREEKS
-        # Delta
+        # Greeks we actually use (Δ and Γ)
         self.call_delta = norm.cdf(d1)
-        self.put_delta = 1 - norm.cdf(d1)
-
-        # Gamma
-        self.call_gamma = norm.pdf(d1) / (
-            strike * volatility * sqrt(time_to_maturity)
+        self.put_delta = self.call_delta - 1.0
+        self.call_gamma = self.put_gamma = (
+            norm.pdf(d1) / (S * sigma * sqrt(T))
         )
-        self.put_gamma = self.call_gamma
 
-
-if __name__ == "__main__":
-    time_to_maturity = 2
-    strike = 90
-    current_price = 100
-    volatility = 0.2
-    interest_rate = 0.05
-
-    # Black Scholes
-    BS = BlackScholes(
-        time_to_maturity=time_to_maturity,
-        strike=strike,
-        current_price=current_price,
-        volatility=volatility,
-        interest_rate=interest_rate)
-    BS.run()
+        self.call_price, self.put_price = call_price, put_price
+        return call_price, put_price

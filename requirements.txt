@@ -1,7 +1,5 @@
-streamlit
-pandas
-numpy
-scipy
-plotly
-matplotlib
-seaborn
+streamlit==1.32.0
+# Use numpy and scipy versions that provide wheels for Python 3.12
+numpy==1.26.4
+scipy==1.11.4
+plotly==5.18.0
